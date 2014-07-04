@@ -20,6 +20,7 @@ import org.apache.avro.Schema;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumWriter;
+import org.omg.PortableInterceptor.INACTIVE;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ public class Converter {
     public static <T> T createDatum(Schema schema, InputStream stream) { return new DatumBuilder(schema).createDatum(stream); }
 
     private static class Options {
-        static final String USAGE = "{-d|--debug} {-b|--baseDir <baseDir>} <xsdFile> <xmlFile> {<avscFile>} {<avroFile>}";
+        static final String USAGE = "{-d|--debug} {-b|--baseDir <baseDir>} {--inarray} <xsdFile> <xmlFile> {<avscFile>} {<avroFile>}";
 
         File xsdFile;
         File xmlFile;
@@ -47,6 +48,8 @@ public class Converter {
 
         boolean debug;
         File baseDir;
+
+		private boolean inarray;
 
         Options(String... args) {
             List<String> files = new ArrayList<>();
@@ -66,6 +69,8 @@ public class Converter {
                             i++;
                             baseDir = new File(args[i]);
                             break;
+                        case "--inarray":
+                        	inarray=true;
                         default:
                             throw new IllegalArgumentException("Unsupported option " + arg);
                     }
@@ -126,13 +131,19 @@ public class Converter {
         SchemaBuilder schemaBuilder = new SchemaBuilder();
         schemaBuilder.setDebug(opts.debug);
         if (opts.baseDir != null) schemaBuilder.setResolver(new BaseDirResolver(opts.baseDir));
+        
+        schemaBuilder.override("anyType", Schema.create(Schema.Type.STRING));
+
+        
         Schema schema = schemaBuilder.createSchema(opts.xsdFile);
 
         try (Writer writer = new FileWriter(opts.avscFile)) {
             writer.write(schema.toString(true));
         }
 
+        
         DatumBuilder datumBuilder = new DatumBuilder(schema);
+        
         Object datum = datumBuilder.createDatum(opts.xmlFile);
 
         try (OutputStream stream = new FileOutputStream(opts.avroFile)) {

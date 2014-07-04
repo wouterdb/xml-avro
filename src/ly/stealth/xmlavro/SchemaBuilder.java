@@ -1,6 +1,7 @@
 package ly.stealth.xmlavro;
 
 import com.sun.org.apache.xerces.internal.dom.DOMInputImpl;
+import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaLoader;
 import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
@@ -9,6 +10,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLErrorHandler;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParseException;
 import com.sun.org.apache.xerces.internal.xs.*;
+
 import org.apache.avro.Schema;
 import org.w3c.dom.ls.LSInput;
 
@@ -27,7 +29,11 @@ public class SchemaBuilder {
     public Resolver getResolver() { return resolver; }
     public void setResolver(Resolver resolver) { this.resolver = resolver; }
 
-
+    public void override(String name, Schema schema){
+    	this.schemas.put(name, schema);
+    }
+    	
+    
     public Schema createSchema(String xsd) {
         return createSchema(new StringReader(xsd));
     }
@@ -60,6 +66,8 @@ public class SchemaBuilder {
             loader.setEntityResolver(new EntityResolver(resolver));
 
         loader.setErrorHandler(errorHandler);
+        loader.setProperty(Constants.XML_SECURITY_PROPERTY_MANAGER, new com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager());
+        loader.setProperty(Constants.XERCES_PROPERTY_PREFIX + Constants.SECURITY_MANAGER_PROPERTY,new com.sun.org.apache.xerces.internal.utils.XMLSecurityManager());
         XSModel model = loader.load(input);
 
         if (errorHandler.exception != null)
@@ -69,7 +77,7 @@ public class SchemaBuilder {
     }
 
     public Schema createSchema(XSModel model) {
-        schemas.clear();
+      
 
         Map<Source, Schema> schemas = new LinkedHashMap<>();
         XSNamedMap rootEls = model.getComponents(XSConstants.ELEMENT_DECLARATION);

@@ -130,7 +130,18 @@ public class DatumBuilder {
     private GenericData.Record createRecord(Schema schema, Element el) {
         GenericData.Record record = new GenericData.Record(schema);
 
-        // initialize arrays and wildcard maps
+        populateRecord(schema, el, record);
+
+        return record;
+    }
+
+    public void createDatum(Element el,GenericData.Record record){
+    	populateRecord(schema, el, record);
+    }
+    
+	private void populateRecord(Schema schema, Element el,
+			GenericData.Record record) {
+		// initialize arrays and wildcard maps
         for (Schema.Field field : record.getSchema().getFields()) {
             if (field.schema().getType() == Schema.Type.ARRAY)
                 record.put(field.name(), new ArrayList<>());
@@ -160,10 +171,11 @@ public class DatumBuilder {
                     List<Object> values = (List<Object>) record.get(field.name());
                     values.add(datum);
                 }
-            } else {
+            }else {
                 Schema.Field anyField = schema.getField(Source.WILDCARD);
+                
                 if (anyField == null)
-                    throw new ConverterException("Type doesn't support any element");
+                    throw new ConverterException("Type doesn't support any element: " + el);
 
                 @SuppressWarnings("unchecked")
                 Map<String, String> map = (HashMap<String, String>) record.get(Source.WILDCARD);
@@ -191,9 +203,7 @@ public class DatumBuilder {
                 record.put(field.name(), datum);
             }
         }
-
-        return record;
-    }
+	}
 
     static Schema.Field getFieldBySource(Schema schema, Source source) {
         for (Schema.Field field : schema.getFields())
