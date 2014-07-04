@@ -71,6 +71,7 @@ public class Converter {
                             break;
                         case "--inarray":
                         	inarray=true;
+                        	break;
                         default:
                             throw new IllegalArgumentException("Unsupported option " + arg);
                     }
@@ -136,6 +137,10 @@ public class Converter {
 
         
         Schema schema = schemaBuilder.createSchema(opts.xsdFile);
+        
+        if(opts.inarray){
+        	schema = Schema.createArray(schema);
+        }
 
         try (Writer writer = new FileWriter(opts.avscFile)) {
             writer.write(schema.toString(true));
@@ -144,8 +149,10 @@ public class Converter {
         
         DatumBuilder datumBuilder = new DatumBuilder(schema);
         
-        Object datum = datumBuilder.createDatum(opts.xmlFile);
-
+        Object datum = datumBuilder.createDatum(opts.xmlFile,opts.inarray);
+        
+        System.out.println(datum.toString().substring(0, 1024));
+        
         try (OutputStream stream = new FileOutputStream(opts.avroFile)) {
             DatumWriter<Object> datumWriter = new SpecificDatumWriter<>(schema);
             datumWriter.write(datum, EncoderFactory.get().directBinaryEncoder(stream, null));

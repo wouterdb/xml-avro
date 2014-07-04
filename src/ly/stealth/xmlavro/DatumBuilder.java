@@ -15,6 +15,7 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+
 import java.io.*;
 import java.util.*;
 
@@ -41,6 +42,7 @@ public class DatumBuilder {
     }
 
     private Schema schema;
+	private boolean inarray;
 
     public DatumBuilder(Schema schema) {
         this.schema = schema;
@@ -77,13 +79,33 @@ public class DatumBuilder {
 
     @SuppressWarnings("unchecked")
     public <T> T createDatum(Element el) {
+    	if(inarray)
+        	return fromArray(schema,el);
+
         return (T) createNodeDatum(schema, el);
     }
 
-    private Object createNodeDatum(Schema schema, Node source) {
+    private  <T> T fromArray(Schema schema, Element el) {
+    	if(!el.getNodeName().equals("ArrayOfAnyType"))
+    		throw new IllegalArgumentException("not in array root is  " + el.getNodeName());
+    	
+    
+    	
+    	List out = new LinkedList();
+    	Node f = el.getFirstChild();
+    	while(f!=null){
+    		if(f instanceof Element)
+    		out.add(createNodeDatum(schema.getElementType(),f));
+    		f=f.getNextSibling();
+    	}
+    	return (T)out;
+		
+	}
+
+	private Object createNodeDatum(Schema schema, Node source) {
         if (!Arrays.asList(Node.ELEMENT_NODE, Node.ATTRIBUTE_NODE).contains(source.getNodeType()))
             throw new IllegalArgumentException("Unsupported node type " + source.getNodeType());
-
+        
         if (PRIMITIVES.contains(schema.getType()))
             return createValue(schema.getType(), source.getTextContent());
 
@@ -247,4 +269,9 @@ public class DatumBuilder {
 
         return result;
     }
+
+	public Object createDatum(File xmlFile, boolean inarray) {
+		this.inarray=inarray;
+		return createDatum(xmlFile);	
+	}
 }
