@@ -95,7 +95,7 @@ public class DatumBuilder {
     	Node f = el.getFirstChild();
     	while(f!=null){
     		if(f instanceof Element)
-    		out.add(createNodeDatum(schema.getElementType(),f));
+    		out.add(createNodeDatum(schema,f));
     		f=f.getNextSibling();
     	}
     	return (T)out;

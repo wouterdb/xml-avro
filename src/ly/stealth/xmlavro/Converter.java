@@ -17,6 +17,7 @@
 package ly.stealth.xmlavro;
 
 import org.apache.avro.Schema;
+import org.apache.avro.file.DataFileWriter;
 import org.apache.avro.io.DatumWriter;
 import org.apache.avro.io.EncoderFactory;
 import org.apache.avro.specific.SpecificDatumWriter;
@@ -138,9 +139,9 @@ public class Converter {
         
         Schema schema = schemaBuilder.createSchema(opts.xsdFile);
         
-        if(opts.inarray){
+      /*  if(opts.inarray){
         	schema = Schema.createArray(schema);
-        }
+        }*/
 
         try (Writer writer = new FileWriter(opts.avscFile)) {
             writer.write(schema.toString(true));
@@ -150,10 +151,17 @@ public class Converter {
         DatumBuilder datumBuilder = new DatumBuilder(schema);
         
         Object datum = datumBuilder.createDatum(opts.xmlFile,opts.inarray);
+        DatumWriter<Object> datumWriter = new SpecificDatumWriter<>(schema);
+        DataFileWriter<Object> dataFileWriter = new DataFileWriter<Object>(datumWriter);
         
-        try (OutputStream stream = new FileOutputStream(opts.avroFile)) {
-            DatumWriter<Object> datumWriter = new SpecificDatumWriter<>(schema);
-            datumWriter.write(datum, EncoderFactory.get().directBinaryEncoder(stream, null));
+        
+        try (DataFileWriter<Object> out = dataFileWriter.create(schema,opts.avroFile)) {
+        	if(opts.inarray){
+        		for(Object o:(List<Object>)datum)
+        			out.append(o);
+        	}else{
+        		out.append(datum);
+        	}
         }
     }
 }
