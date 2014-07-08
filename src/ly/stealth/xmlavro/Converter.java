@@ -151,8 +151,6 @@ public class Converter {
         
         Object datum = datumBuilder.createDatum(opts.xmlFile,opts.inarray);
         
-        System.out.println(datum.toString().substring(0, 1024));
-        
         try (OutputStream stream = new FileOutputStream(opts.avroFile)) {
             DatumWriter<Object> datumWriter = new SpecificDatumWriter<>(schema);
             datumWriter.write(datum, EncoderFactory.get().directBinaryEncoder(stream, null));
